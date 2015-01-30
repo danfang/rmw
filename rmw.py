@@ -7,13 +7,25 @@ from rmw_cli import RMWClient
 
 
 if __name__ == "__main__":
-    command = sys.argv[1]
+    ''' 
+    The control module for both rmw's server and client 
+    TODO: better argument parsing and error checking (find a way to better organize this)
+    '''
 
+    command = sys.argv[1]
+    debug = False
+
+    if '-debug' in sys.argv:
+        debug = True
+        sys.argv.remove('-debug')
+
+    # commands that require the server
     if (command in ['start', 'stop', 'restart']):
-        daemon = RMWDaemon()
+        daemon = RMWDaemon(debug = debug)
 
         print("Remind me service: " + command)
         if command == 'start':
+            print 'Debug mode: ' + str(debug)
             daemon.start()
         elif command == 'stop':
             daemon.stop()
@@ -22,6 +34,7 @@ if __name__ == "__main__":
 
         sys.exit(0)
 
+    # commands that require the client
     elif (command in ['clear', 'show', 'process', 'file', 'time']) :
         cli = RMWClient()
 

@@ -19,6 +19,8 @@ rmw file -gt 3000 log.txt (Remind me when log.txt is greater than 3KB)
 
 rmw show (Show all open reminders)
 
+rmw clear -n 1 (Clears the reminder at index 1)
+
 ## TODO:
 
 #### General
