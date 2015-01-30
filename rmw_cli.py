@@ -14,3 +14,8 @@ class RMWClient(object):
     def show(self):
         c = rpyc.connect("localhost", 18861)
         return c.root.show()
+
+    def clear(self, index = None):
+        c = rpyc.connect("localhost", 18861)
+        return c.root.clear(index)
+

@@ -22,11 +22,18 @@ if __name__ == "__main__":
 
         sys.exit(0)
 
-    elif (command in ['show', 'process', 'file', 'time']) :
+    elif (command in ['clear', 'show', 'process', 'file', 'time']) :
         cli = RMWClient()
 
-        if (command == 'show'):
+        if command == 'clear':
+            if len(sys.argv[2:]) == 2 and sys.argv[2] == '-n':
+                print(cli.clear(int(sys.argv[3])))
+            else:
+                print(cli.clear())
+
+        if command == 'show':
             print(cli.show())
 
-        if (command == 'file'):
+        if command == 'file':
             print(cli.file_reminder(sys.argv[2:]))
+

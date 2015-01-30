@@ -61,6 +61,18 @@ class RMWService(rpyc.Service):
 
         return res
 
+    def exposed_clear(self, index = None):
+        if index:
+
+            if index <= len(self.reminders) and index > 0:
+                del self.reminders[index - 1]
+                return 'Reminder {} cleared'.format(index)
+
+            return 'Not a valid reminder index'
+
+        self.reminders = []
+        return 'All reminders cleared'
+
 
     class EventLoop(threading.Thread):
 
