@@ -48,5 +48,7 @@ if __name__ == "__main__":
             print(cli.show())
 
         if command == 'file':
-            print(cli.file_reminder(sys.argv[2:]))
+            flags = []
+            flags.append((sys.argv[2], sys.argv[3]))
+            print(cli.file_reminder(flags, sys.argv[-1]))
 

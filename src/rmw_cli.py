@@ -5,11 +5,10 @@ import rpyc
 import os
 
 class RMWClient(object):
-    def file_reminder(self, args):
-        r_type, value, target = args
+    def file_reminder(self, flags, target):
         target = os.path.abspath(target)
         c = rpyc.connect("localhost", 18861)
-        return c.root.file_reminder(r_type, value, target)
+        return c.root.file_reminder(flags, target)
 
     def show(self):
         c = rpyc.connect("localhost", 18861)

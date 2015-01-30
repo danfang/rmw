@@ -7,6 +7,29 @@ import rpyc
 import os
 from subprocess import call
 from util.daemon import Daemon
+from reminders import *
+
+logger = logging.getLogger('rmw_service')
+handler = logging.FileHandler('/var/log/rmw/rmw_service.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
+class RMWDaemon(Daemon):
+    '''
+    Sets up ports and logging of Rpyc services.
+    Additionally, will daemonize the process if debugging is off
+    '''
+    def __init__(self, port = 18861, debug = False):
+        Daemon.__init__(self, '/tmp/rmw.pid', debug)
+
+        self.port = port;
+
+    def run(self):
+        from rpyc.utils.server import ThreadedServer
+        t = ThreadedServer(RMWService, logger = logger, port = self.port)
+        t.start()
 
 class EventLoop(threading.Thread):
     ''' Thread that continually checks for reminder updates '''
@@ -17,66 +40,32 @@ class EventLoop(threading.Thread):
         self.started = False
         self.reminders = []
         self.stop = threading.Event()
-        
+
+    def __len__(self):
+        return len(self.reminders)
+       
     def run(self):
         ''' Checks reminders in order with a 2 second interval '''
-        print('Starting event loop')
+        logger.info('Starting event loop')
 
         while True and not self.stop.isSet():
-            print('Checking status of reminders')
+            logger.info('Checking status of reminders')
             for reminder in self.reminders:
-                self.handle_reminder(reminder)
+                if reminder.handle():
+                    self.reminders.remove(reminder)
+                    logger.info('Completed and removed reminder')
 
             self.stop.wait(2)
 
     def get_reminders(self):
         return self.reminders
 
+    def clear(self):
+        self.reminders = []
+
     def add_reminder(self, reminder):
         self.reminders.append(reminder)
 
-    def handle_reminder(self, reminder):
-        ''' Handles the necessary tasks for any particular reminder '''
-
-        print('Checking reminder: ' + str(reminder))
-        if reminder['command'] == 'file':
-            if reminder['type'] == '-gt':
-                target = reminder['target']
-                value = reminder['value']
-
-                try:
-                    size = os.path.getsize(target)
-
-                    if size > int(value):
-                        call("echo \'rmw: {} size greater than {}\' | wall ".format(
-                            target, value), shell=True)
-
-                        self.reminders.remove(reminder)
-                except:
-                    pass
-
-class RMWDaemon(Daemon):
-    '''
-    Sets up ports and logging of Rpyc services.
-    Additionally, will daemonize the process if debugging is off
-    '''
-    def __init__(self, port = 18861, debug = False):
-        Daemon.__init__(self, '/tmp/rmw.pid', debug)
-
-        logger = logging.getLogger('rmw_service')
-        handler = logging.FileHandler('/var/log/rmw/rmw_service.log')
-        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
-
-        self.port = port;
-        self.logger = logger
-
-    def run(self):
-        from rpyc.utils.server import ThreadedServer
-        t = ThreadedServer(RMWService, logger = self.logger, port = self.port)
-        t.start()
 
 class RMWService(rpyc.Service):
     '''
@@ -104,23 +93,23 @@ class RMWService(rpyc.Service):
     def on_disconnect(self):
         pass
 
-    def exposed_file_reminder(self, r_type, value, target):
+    def exposed_file_reminder(self, flags, target):
         ''' Creates a reminder pertaining to a file '''
+        reminder = FileReminder(flags, target)
+        self.jobs.add_reminder(reminder)
 
-        self.jobs.add_reminder({'command': 'file', 'type': r_type, 'value': value, 'target': target})
-        return ('Added new reminder for {}: {} {}'.format(target, r_type, value))
+        return str(reminder)
 
     def exposed_show(self):
         ''' Returns a formatted string of all open orders'''
 
-        if (len(self.jobs.get_reminders()) == 0):
-            return 'No reminders set!'
+        if (len(self.jobs) == 0):
+            return 'No reminders set yet.'
 
         res = ''
         index = 1
         for reminder in self.jobs.get_reminders():
-            res += ('{}. When {} {} {}\n'.format(
-                index, reminder['target'], reminder['type'], reminder['value']))
+            res += str(reminder)
 
         return res
 
@@ -131,12 +120,11 @@ class RMWService(rpyc.Service):
         '''
         if index:
 
-            if index <= len(self.reminders) and index > 0:
-                del self.reminders[index - 1]
+            if index <= len(self.jobs) and index > 0:
+                del self.jobs.reminders[index - 1]
                 return 'Reminder {} cleared'.format(index)
 
             return 'Not a valid reminder index'
 
-        # TODO: Fix this
-        self.reminders = []
+        self.jobs.clear()
         return 'All reminders cleared'
