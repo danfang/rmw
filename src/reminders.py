@@ -1,3 +1,14 @@
+import logging
+import os
+from subprocess import call
+
+logger = logging.getLogger('rmw_service')
+handler = logging.FileHandler('/var/log/rmw/rmw_service.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
 class Reminder(object):
     '''
     Types of reminders:
@@ -31,7 +42,7 @@ class Reminder(object):
     '''
 
     def __str__(self):
-        return '{} reminder for {}, with {}'.format(
+        return '{} for {}, with {}'.format(
                 type(self).__name__, self.target, str(self.flags))
 
     def valid_flags(self, flags):
@@ -43,15 +54,15 @@ class Reminder(object):
 class FileReminder(Reminder):
 
     def __init__(self, flags, target):
-        self.flags = flags
+        self.flags = []
+        for flag in flags:
+            self.flags.append(flag)
         self.target = target
 
     def valid_flags(self, flags):
         pass
 
     def handle(self):
-        print(str(self))
-
         for flag in self.flags:
             option, value = flag
 
@@ -62,8 +73,8 @@ class FileReminder(Reminder):
                     if size > int(value):
                         call("echo \'rmw: {} size greater than {}\' | wall ".format(self.target, value), shell=True) 
                         return True
-                except:
-                    pass
+                except Exception, e:
+                    logger.error(e)
         return False
 
 class ProcessReminder(Reminder):

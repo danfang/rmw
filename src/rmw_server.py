@@ -28,7 +28,8 @@ class RMWDaemon(Daemon):
 
     def run(self):
         from rpyc.utils.server import ThreadedServer
-        t = ThreadedServer(RMWService, logger = logger, port = self.port)
+        t = ThreadedServer(RMWService, logger = logger, port = self.port,
+                protocol_config = {'allow_public_attrs': True})
         t.start()
 
 class EventLoop(threading.Thread):
@@ -65,7 +66,6 @@ class EventLoop(threading.Thread):
 
     def add_reminder(self, reminder):
         self.reminders.append(reminder)
-
 
 class RMWService(rpyc.Service):
     '''
@@ -109,7 +109,7 @@ class RMWService(rpyc.Service):
         res = ''
         index = 1
         for reminder in self.jobs.get_reminders():
-            res += str(reminder)
+            res += '{}. {}'.format(index, reminder)
 
         return res
 

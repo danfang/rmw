@@ -6,15 +6,25 @@ import os
 
 class RMWClient(object):
     def file_reminder(self, flags, target):
-        target = os.path.abspath(target)
-        c = rpyc.connect("localhost", 18861)
-        return c.root.file_reminder(flags, target)
+        try:
+            c = rpyc.connect("localhost", 18861)
+            target = os.path.abspath(target)
+            return c.root.file_reminder(flags, target)
+        except:
+            return 'Unable to connect'
 
     def show(self):
-        c = rpyc.connect("localhost", 18861)
-        return c.root.show()
+        try:
+            c = rpyc.connect("localhost", 18861)
+            return c.root.show()
+        except:
+            return 'Unable to connect'
 
     def clear(self, index = None):
-        c = rpyc.connect("localhost", 18861)
-        return c.root.clear(index)
+        try:
+            c = rpyc.connect("localhost", 18861)
+            return c.root.clear(index)
+        except:
+            return 'Unable to connect'
+
 
