@@ -6,7 +6,54 @@ import threading
 import rpyc
 import os
 from subprocess import call
-from daemon import Daemon
+from util.daemon import Daemon
+
+class EventLoop(threading.Thread):
+    ''' Thread that continually checks for reminder updates '''
+
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+        self.started = False
+        self.reminders = []
+        self.stop = threading.Event()
+        
+    def run(self):
+        ''' Checks reminders in order with a 2 second interval '''
+        print('Starting event loop')
+
+        while True and not self.stop.isSet():
+            print('Checking status of reminders')
+            for reminder in self.reminders:
+                self.handle_reminder(reminder)
+
+            self.stop.wait(2)
+
+    def get_reminders(self):
+        return self.reminders
+
+    def add_reminder(self, reminder):
+        self.reminders.append(reminder)
+
+    def handle_reminder(self, reminder):
+        ''' Handles the necessary tasks for any particular reminder '''
+
+        print('Checking reminder: ' + str(reminder))
+        if reminder['command'] == 'file':
+            if reminder['type'] == '-gt':
+                target = reminder['target']
+                value = reminder['value']
+
+                try:
+                    size = os.path.getsize(target)
+
+                    if size > int(value):
+                        call("echo \'rmw: {} size greater than {}\' | wall ".format(
+                            target, value), shell=True)
+
+                        self.reminders.remove(reminder)
+                except:
+                    pass
 
 class RMWDaemon(Daemon):
     '''
@@ -37,8 +84,8 @@ class RMWService(rpyc.Service):
     is a check for updates (err, resolution, status change) to existing
     reminders.
     '''
-    reminders = []
-    started_jobs = False
+    
+    jobs = EventLoop()
 
     def __init__(self, conn):
         ''' 
@@ -46,11 +93,10 @@ class RMWService(rpyc.Service):
         TODO: Fix and prevent the creation of multiple threads from multiple
         Service processes
         '''
-        if not self.started_jobs:
-            jobs = self.EventLoop(self.reminders)
-            jobs.start()
-            print('Starting event loop')
-            self.started_jobs = True
+        if not self.jobs.started:
+            self.jobs.setDaemon(True)
+            self.jobs.start()
+            self.jobs.started = True
         
     def on_connect(self):
         pass
@@ -61,18 +107,18 @@ class RMWService(rpyc.Service):
     def exposed_file_reminder(self, r_type, value, target):
         ''' Creates a reminder pertaining to a file '''
 
-        self.reminders.append({'command': 'file', 'type': r_type, 'value': value, 'target': target})
+        self.jobs.add_reminder({'command': 'file', 'type': r_type, 'value': value, 'target': target})
         return ('Added new reminder for {}: {} {}'.format(target, r_type, value))
 
     def exposed_show(self):
         ''' Returns a formatted string of all open orders'''
 
-        if (len(self.reminders) == 0):
+        if (len(self.jobs.get_reminders()) == 0):
             return 'No reminders set!'
 
         res = ''
         index = 1
-        for reminder in self.reminders:
+        for reminder in self.jobs.get_reminders():
             res += ('{}. When {} {} {}\n'.format(
                 index, reminder['target'], reminder['type'], reminder['value']))
 
@@ -94,47 +140,3 @@ class RMWService(rpyc.Service):
         # TODO: Fix this
         self.reminders = []
         return 'All reminders cleared'
-
-
-    class EventLoop(threading.Thread):
-        ''' Thread that continually checks for reminder updates '''
-
-        def __init__(self, reminders):
-            threading.Thread.__init__(self)
-            self.reminders = reminders
-            self.stop = threading.Event()
-            
-        def stop(self):
-            ''' Stops the event loop '''
-
-            self.stop.set()
-
-        def run(self):
-            ''' Checks reminders in order with a 2 second interval '''
-
-            while True and not self.stop.isSet():
-                print('Checking status of reminders')
-                for reminder in self.reminders:
-                    self.handle_reminder(reminder)
-
-                time.sleep(2)
-
-        def handle_reminder(self, reminder):
-            ''' Handles the necessary tasks for any particular reminder '''
-
-            print('Checking reminder: ' + str(reminder))
-            if reminder['command'] == 'file':
-                if reminder['type'] == '-gt':
-                    target = reminder['target']
-                    value = reminder['value']
-
-                    try:
-                        size = os.path.getsize(target)
-
-                        if size > int(value):
-                            call("echo \'rmw: {} size greater than {}\' | wall ".format(
-                                target, value), shell=True)
-
-                            self.reminders.remove(reminder)
-                    except:
-                        pass
