@@ -23,7 +23,6 @@ class RMWDaemon(Daemon):
     '''
     def __init__(self, port = 18861, debug = False):
         Daemon.__init__(self, '/tmp/rmw.pid', debug)
-
         self.port = port;
 
     def run(self):

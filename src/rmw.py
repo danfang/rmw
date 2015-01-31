@@ -6,20 +6,32 @@ import argparse
 from rmw_server import RMWDaemon
 from rmw_cli import RMWClient
 
-
 if __name__ == "__main__":
     ''' 
     The control module for both rmw's server and client 
     '''
 
     def start_daemon(args):
-        RMWDaemon(debug = args.debug).start()
+        status = 'Reminder service started'
+        if args.port != None:
+            status += ' on port ' + str(args.port)
+
+        print status
+        RMWDaemon(port = args.port, debug = args.debug).start()
 
     def stop_daemon(args):
         RMWDaemon(debug = args.debug).stop()
+        print 'Reminder service stopped'
 
     def restart_daemon(args):
-        RMWDaemon(debug = args.debug).restart()
+        status = 'Reminder service restarted'
+        if args.port != None:
+            print status + ' on port ' + str(args.port)
+            RMWDaemon(port = args.port, debug = args.debug).restart()
+            status += ' on port ' + args.port
+        else:
+            print status
+            RMWDaemon(debug = args.debug).restart()
 
     def clear_reminders(args):
         cli = RMWClient()
@@ -67,6 +79,9 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--debug', action='store_true',
             help='do not run the program as a daemon')
     
+    parser.add_argument('-p', '--port', type=int,
+            help='Choose what port the rmw service runs on')
+
     # client-side non reminders
     sp_show = sp.add_parser('show', help='Shows all open reminders')
     sp_show.set_defaults(func=show_reminders)

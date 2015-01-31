@@ -8,6 +8,9 @@ class Daemon:
     A generic daemon class.
 
     Usage: subclass the Daemon class and override the run() method
+
+    Credit: http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
+    Author: Sander Marechal
     """
     def __init__(self, pidfile, debug = False, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
         self.stdin = stdin
@@ -77,8 +80,6 @@ class Daemon:
             pid = None
 
         if pid:
-            message = "pidfile %s already exists. Daemon already running?\n"
-            sys.stderr.write(message % self.pidfile)
             sys.exit(1)
 
         # Start the daemon
@@ -100,8 +101,6 @@ class Daemon:
             pid = None
 
         if not pid:
-            message = "pidfile %s does not exist. Daemon not running?\n"
-            sys.stderr.write(message % self.pidfile)
             return # not an error in a restart
 
         # Try killing the daemon process
