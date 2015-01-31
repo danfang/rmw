@@ -83,6 +83,7 @@ class Daemon:
             sys.stderr.write('The reminder service is already running!\n')
             sys.exit(1)
 
+        sys.stdout.write('Started the reminder service\n')
         # Start the daemon
         if not self.debug:
             self.daemonize()
@@ -103,7 +104,7 @@ class Daemon:
 
         if not pid:
             sys.stderr.write('The reminder service is not running!\n')
-            sys.exit(1)
+            return
 
         # Try killing the daemon process
         try:

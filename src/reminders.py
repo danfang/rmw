@@ -1,37 +1,9 @@
 import logging
 import os
-from subprocess import call
+from subprocess import call, Popen, PIPE
 
 class Reminder(object):
     '''
-    Types of reminders:
-        file [file_name]
-            OPTIONS:
-            None: Created
-            -gt: Greater than (size)
-            -lt size: Smaller than (size)
-            -m: Modified
-            -n age: Newer than (age)
-            -o age: Older than (age)
-
-        process [proc_name]
-            OPTIONS:
-            None: Created
-            -s: Stopped
-            -n age: Newer than (age)
-            -o age: Older than (age)
-
-        time []
-            OPTIONS:
-            -e secs: Elapsed (seconds)
-            -a time: After (time)
-
-        custom []
-            OPTIONS:
-            -e secs: Elapsed (secs)
-                -m str: Optional message
-            -a time: After (ttime)
-                -m str: Optional message
     '''
     def __init__(self, logger, flags, target):
         self.logger = logger
@@ -91,13 +63,22 @@ class FileReminder(Reminder):
 
 class ProcessReminder(Reminder):
 
-    processes = []
-
     def __init__(self, logger, flags, target):
         Reminder.__init__(self, logger, flags, target)
 
     def handle(self):
-        pass
+        try:
+            if self.flags != None:
+                pass
+            else:
+                processes = Popen('ps --no-headers -C ' + self.target, shell=True, stdout=PIPE)
+
+                if processes.stdout.readline() != '':
+                    return self.success(self.target, 'is now active', None)
+        except Exception, e:
+            self.logger.error(e)
+
+        return False
 
 
 class TimeReminder(Reminder):

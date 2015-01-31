@@ -40,8 +40,6 @@ class EventLoop(threading.Thread):
         self.reminders = []
         self.stop = threading.Event()
         self.stop.set()
-        self.pm = self.ProcessesMonitor()
-        self.processes_monitoring = 0
 
     def __len__(self):
         return len(self.reminders)
@@ -56,9 +54,6 @@ class EventLoop(threading.Thread):
                     self.reminders.remove(reminder)
                     logger.info('Completed and removed reminder')
 
-                    if self.pm.stop.isSet() and self.processes_monitoring == 0:
-                        self.pm.stop.set()
-
             self.stop.wait(2)
 
     def get_reminders(self):
@@ -69,35 +64,6 @@ class EventLoop(threading.Thread):
 
     def add_reminder(self, reminder):
         self.reminders.append(reminder)
-
-    class ProcessesMonitor(threading.Thread):
-
-        def __init__(self):
-            threading.Thread.__init__(self)
-
-            self.setDaemon(True)
-            self.processes = []
-            self.stop = threading.Event()
-            self.stop.set()
-
-        def get(self):
-            return self.processes
-
-        def run(self):
-            logger.info('Starting process monitor')
-            while True and not self.stop.isSet():
-                refresh_processes()
-                self.stop.wait(5)
-
-        def refresh_processes(self):
-            self.processes = [
-                (
-                    pid,  # pid
-                    open(os.path.join('/proc', pid, 'cmdline'), 'rb').read() # proc name
-                )
-                for pid in os.listdir('/proc') if pid.isdigit()
-            ]
-            logger.info(self.processes)
 
 class RMWService(rpyc.Service):
     '''
@@ -144,19 +110,17 @@ class RMWService(rpyc.Service):
         res = ''
         index = 1
         for reminder in self.jobs.get_reminders():
-            res += '{}. {}'.format(index, reminder)
+            res += '{}. {}\n'.format(index, reminder)
+            index += 1
 
         return res
 
     def exposed_process_reminder(self, flags, target):
         ''' Creates a reminder pertaining to a process '''
-        if self.jobs.pm.stop.isSet():
-            self.jobs.pm.stop.clear()
-            self.jobs.pm.start()
+        reminder = ProcessReminder(logger, flags, target)
+        self.jobs.add_reminder(reminder)
 
-        self.jobs.processes_monitoring += 1
-
-        reminder = ProcessReminder(logger, flags, target, self.jobs.pm.get())
+        return str(reminder)
 
     def exposed_clear(self, index = None):
         ''' 

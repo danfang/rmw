@@ -12,12 +12,10 @@ if __name__ == "__main__":
     '''
 
     def start_daemon(args):
-        status = 'Reminder service started'
         if args.port != None:
-            print status + ' on port ' + str(args.port)
+            print 'Running on port ' + str(args.port)
             RMWDaemon(port = args.port, debug = args.debug).start()
         else:
-            print status
             RMWDaemon(debug = args.debug).start()
 
 
@@ -60,12 +58,13 @@ if __name__ == "__main__":
         cli = RMWClient()
 
         if args.stopped:
-            cli.process_reminder(('stopped', True), args.process)
+            print(cli.process_reminder(('stopped', True), args.process))
         elif args.newer:
             pass
         elif args.older:
             pass
         else:
+            print(cli.process_reminder(None, args.process))
             pass
 
     def time_reminder(args):

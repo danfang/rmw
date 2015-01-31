@@ -20,6 +20,20 @@ class RMWClient(object):
             print e
             return 'Unable to connect'
 
+    def process_reminder(self, flags, processes):
+        try:
+            c = rpyc.connect("localhost", 18861)
+            total = ''
+
+            for process_name in processes:
+                total += 'Created ' + c.root.process_reminder(flags, process_name) + '\n'
+
+            return total
+
+        except Exception, e:
+            print e
+            return 'Unable to connect'
+
     def show(self):
         try:
             c = rpyc.connect("localhost", 18861)

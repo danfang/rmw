@@ -15,11 +15,46 @@ rpyc
 
 ## Usage
 
-rmw file -gt 3000 log.txt (Remind me when log.txt is greater than 3KB)
+```
+rmw file foo.txt bar.txt other.txt (Remind me when log.txt is greater than 3KB)
 
-rmw show (Show all open reminders)
+Created FileReminder for foo.txt
+Created FileReminder for bar.txt
+Created FileReminder for other.txt
 
-rmw clear -n 1 (Clears the reminder at index 1)
+touch foo.txt
+
+...
+
+Broadcast Message from user@host (somewhere) at 22:12 ...                            
+                                                                    
+Reminder for foo.txt: has been created  
+
+```
+
+Other quick reminders
+
+```
+rmw file {-lt,-gt} 3000 log.txt (Remind me when log.txt is less than or greater than 3MB)
+rmw process {-s} someprocess (Remind me when someprocess is started or stopped)
+```
+
+Control commands
+
+```
+rmw {start,stop,restart} 
+
+...
+
+rmw show
+1. FileReminder for bar.txt
+2. FileReminder for other.txt
+
+...
+
+rmw clear
+All reminders cleared
+```
 
 ## TODO:
 
@@ -29,13 +64,9 @@ allow pip build and install
 
 find another way to do notifications besides 'wall'
 
-port configurations
+add 'sticky' reminders
 
 ### Features
-
-rmw file -lt 3000 log.txt (Remind me when log.txt is less than 3MB)
-
-rmw process -c someprocess (Remind me when someprocess is closed)
 
 rmw process -o someprocess (Remind me when someprocess is open)
 
