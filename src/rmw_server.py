@@ -36,9 +36,12 @@ class EventLoop(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
 
-        self.started = False
+        self.setDaemon(True)
         self.reminders = []
         self.stop = threading.Event()
+        self.stop.set()
+        self.pm = self.ProcessesMonitor()
+        self.processes_monitoring = 0
 
     def __len__(self):
         return len(self.reminders)
@@ -53,6 +56,9 @@ class EventLoop(threading.Thread):
                     self.reminders.remove(reminder)
                     logger.info('Completed and removed reminder')
 
+                    if self.pm.stop.isSet() and self.processes_monitoring == 0:
+                        self.pm.stop.set()
+
             self.stop.wait(2)
 
     def get_reminders(self):
@@ -63,6 +69,35 @@ class EventLoop(threading.Thread):
 
     def add_reminder(self, reminder):
         self.reminders.append(reminder)
+
+    class ProcessesMonitor(threading.Thread):
+
+        def __init__(self):
+            threading.Thread.__init__(self)
+
+            self.setDaemon(True)
+            self.processes = []
+            self.stop = threading.Event()
+            self.stop.set()
+
+        def get(self):
+            return self.processes
+
+        def run(self):
+            logger.info('Starting process monitor')
+            while True and not self.stop.isSet():
+                refresh_processes()
+                self.stop.wait(5)
+
+        def refresh_processes(self):
+            self.processes = [
+                (
+                    pid,  # pid
+                    open(os.path.join('/proc', pid, 'cmdline'), 'rb').read() # proc name
+                )
+                for pid in os.listdir('/proc') if pid.isdigit()
+            ]
+            logger.info(self.processes)
 
 class RMWService(rpyc.Service):
     '''
@@ -79,10 +114,12 @@ class RMWService(rpyc.Service):
         TODO: Fix and prevent the creation of multiple threads from multiple
         Service processes
         '''
-        if not self.jobs.started:
-            self.jobs.setDaemon(True)
-            self.jobs.start()
-            self.jobs.started = True
+        try:
+            if self.jobs.stop.isSet():
+                self.jobs.stop.clear()
+                self.jobs.start()
+        except Exception, e:
+            logger.error(e)
         
     def on_connect(self):
         pass
@@ -110,6 +147,16 @@ class RMWService(rpyc.Service):
             res += '{}. {}'.format(index, reminder)
 
         return res
+
+    def exposed_process_reminder(self, flags, target):
+        ''' Creates a reminder pertaining to a process '''
+        if self.jobs.pm.stop.isSet():
+            self.jobs.pm.stop.clear()
+            self.jobs.pm.start()
+
+        self.jobs.processes_monitoring += 1
+
+        reminder = ProcessReminder(logger, flags, target, self.jobs.pm.get())
 
     def exposed_clear(self, index = None):
         ''' 

@@ -12,7 +12,7 @@ class RMWClient(object):
 
             for file_name in files:
                 file_name = os.path.abspath(file_name)
-                total += c.root.file_reminder(flags, file_name)
+                total += 'Created ' + c.root.file_reminder(flags, file_name) + '\n'
 
             return total
 

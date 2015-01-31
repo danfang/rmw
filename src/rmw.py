@@ -14,10 +14,12 @@ if __name__ == "__main__":
     def start_daemon(args):
         status = 'Reminder service started'
         if args.port != None:
-            status += ' on port ' + str(args.port)
+            print status + ' on port ' + str(args.port)
+            RMWDaemon(port = args.port, debug = args.debug).start()
+        else:
+            print status
+            RMWDaemon(debug = args.debug).start()
 
-        print status
-        RMWDaemon(port = args.port, debug = args.debug).start()
 
     def stop_daemon(args):
         RMWDaemon(debug = args.debug).stop()
@@ -26,12 +28,11 @@ if __name__ == "__main__":
     def restart_daemon(args):
         status = 'Reminder service restarted'
         if args.port != None:
-            print status + ' on port ' + str(args.port)
             RMWDaemon(port = args.port, debug = args.debug).restart()
-            status += ' on port ' + args.port
+            print status + ' on port ' + str(args.port)
         else:
-            print status
             RMWDaemon(debug = args.debug).restart()
+            print status
 
     def clear_reminders(args):
         cli = RMWClient()
@@ -56,8 +57,16 @@ if __name__ == "__main__":
             print(cli.file_reminder(None, args.file))
 
     def process_reminder(args):
-        print args
-        pass
+        cli = RMWClient()
+
+        if args.stopped:
+            cli.process_reminder(('stopped', True), args.process)
+        elif args.newer:
+            pass
+        elif args.older:
+            pass
+        else:
+            pass
 
     def time_reminder(args):
         print args
@@ -105,6 +114,7 @@ if __name__ == "__main__":
     process_group.add_argument('-n', '--newer', type=int, metavar='timestr')
     process_group.add_argument('-o', '--older', type=int, metavar='timestr')
     sp_process.set_defaults(func=process_reminder)
+    sp_process.add_argument('process', nargs='+')
 
     sp_time = sp.add_parser('time', help='set a time-based reminder')
     time_group = sp_time.add_mutually_exclusive_group()

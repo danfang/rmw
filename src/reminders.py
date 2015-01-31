@@ -33,6 +33,10 @@ class Reminder(object):
             -a time: After (ttime)
                 -m str: Optional message
     '''
+    def __init__(self, logger, flags, target):
+        self.logger = logger
+        self.target = target
+        self.flags = flags
 
     def __str__(self):
         total = '{} for {}'.format(type(self).__name__, self.target)
@@ -46,17 +50,21 @@ class Reminder(object):
         return False
 
     def success(self, target, quality, value):
-        call("echo \'Reminder {} {} {}\' | wall ".format(
-            self.target, quality, value), shell=True) 
+        if value != None:
+            to_call = "echo \'Reminder for {}: {} {}\' | wall".format(
+                    self.target, quality, value)
+        else:
+            to_call = "echo \'Reminder for {}: {}\' | wall".format(
+                    self.target, quality)
+
+        call(to_call, shell=True) 
 
         return True
 
 class FileReminder(Reminder):
 
     def __init__(self, logger, flags, target):
-        self.logger = logger
-        self.target = target
-        self.flags = flags
+        Reminder.__init__(self, logger, flags, target)
 
     def handle(self):
         if self.flags != None:
@@ -83,11 +91,14 @@ class FileReminder(Reminder):
 
 class ProcessReminder(Reminder):
 
-    def __init__(self, flags, target):
-        Reminder.__init__(self, flags, target)
+    processes = []
+
+    def __init__(self, logger, flags, target):
+        Reminder.__init__(self, logger, flags, target)
 
     def handle(self):
         pass
+
 
 class TimeReminder(Reminder):
 
