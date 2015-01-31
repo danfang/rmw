@@ -7,7 +7,7 @@ It's a small service that uses RPC commands to set reminders for certain events.
 
 ## Status
 
-in-progress
+In-progress
 
 ## Dependencies
 
@@ -17,9 +17,11 @@ rpyc
 
 ## Installation
 
-in-progress
+In-progress
 
 ## Usage
+
+### Basic
 
 ```
 rmw file foo.txt bar.txt other.txt 
@@ -38,17 +40,17 @@ Reminder for foo.txt: has been created
 
 ```
 
-Other quick reminders
+### Other quick reminders
 
 ```
 rmw file {-lt,-gt} 3000 log.txt (Remind me when log.txt is less than or greater than 3MB)
 rmw process {-s} someprocess (Remind me when someprocess is started or stopped)
 ```
 
-Control commands
+### Control commands
 
 ```
-rmw {start,stop,restart} 
+rmw {start,stop,restart} (Control the port, daemonization, status of the rpc server)
 
 ...
 
