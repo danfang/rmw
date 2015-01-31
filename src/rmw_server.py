@@ -28,8 +28,7 @@ class RMWDaemon(Daemon):
 
     def run(self):
         from rpyc.utils.server import ThreadedServer
-        t = ThreadedServer(RMWService, logger = logger, port = self.port,
-                protocol_config = {'allow_public_attrs': True})
+        t = ThreadedServer(RMWService, logger = logger, port = self.port)
         t.start()
 
 class EventLoop(threading.Thread):
@@ -50,7 +49,6 @@ class EventLoop(threading.Thread):
         logger.info('Starting event loop')
 
         while True and not self.stop.isSet():
-            logger.info('Checking status of reminders')
             for reminder in self.reminders:
                 if reminder.handle():
                     self.reminders.remove(reminder)
@@ -95,8 +93,9 @@ class RMWService(rpyc.Service):
 
     def exposed_file_reminder(self, flags, target):
         ''' Creates a reminder pertaining to a file '''
-        reminder = FileReminder(flags, target)
+        reminder = FileReminder(logger, flags, target)
         self.jobs.add_reminder(reminder)
+        logger.info('Reminder set: ' + str(reminder))
 
         return str(reminder)
 

@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+import argparse
 
 from rmw_server import RMWDaemon
 from rmw_cli import RMWClient
@@ -9,46 +10,93 @@ from rmw_cli import RMWClient
 if __name__ == "__main__":
     ''' 
     The control module for both rmw's server and client 
-    TODO: better argument parsing and error checking (find a way to better organize this)
     '''
 
-    command = sys.argv[1]
-    debug = False
+    def start_daemon(args):
+        RMWDaemon(debug = args.debug).start()
 
-    if '-debug' in sys.argv:
-        debug = True
-        sys.argv.remove('-debug')
+    def stop_daemon(args):
+        RMWDaemon(debug = args.debug).stop()
 
-    # commands that require the server
-    if (command in ['start', 'stop', 'restart']):
-        daemon = RMWDaemon(debug = debug)
+    def restart_daemon(args):
+        RMWDaemon(debug = args.debug).restart()
 
-        print("Remind me service: " + command)
-        if command == 'start':
-            print 'Debug mode: ' + str(debug)
-            daemon.start()
-        elif command == 'stop':
-            daemon.stop()
-        elif command == 'restart':
-            daemon.restart()
-
-        sys.exit(0)
-
-    # commands that require the client
-    elif (command in ['clear', 'show', 'process', 'file', 'time']) :
+    def clear_reminders(args):
         cli = RMWClient()
 
-        if command == 'clear':
-            if len(sys.argv[2:]) == 2 and sys.argv[2] == '-n':
-                print(cli.clear(int(sys.argv[3])))
-            else:
-                print(cli.clear())
+        if args.index:
+            print(cli.clear())
+        else:
+            print(cli.clear(index = args.index))
 
-        if command == 'show':
-            print(cli.show())
+    def show_reminders(args):
+        cli = RMWClient()
+        print(cli.show())
 
-        if command == 'file':
-            flags = []
-            flags.append((sys.argv[2], sys.argv[3]))
-            print(cli.file_reminder(flags, sys.argv[-1]))
+    def file_reminder(args):
+        cli = RMWClient()
+
+        if args.sizegt:
+            print(cli.file_reminder(('sizegt', args.sizegt), args.file))
+        elif args.sizelt:
+            print(cli.file_reminder(('sizelt', args.sizegt), args.file))
+        else:
+            print(cli.file_reminder(None, args.file))
+
+    def process_reminder(args):
+        print args
+        pass
+
+    def time_reminder(args):
+        print args
+        pass
+
+    parser = argparse.ArgumentParser(prog='rmw')
+    sp = parser.add_subparsers()
+
+    # server side commands
+    sp_start = sp.add_parser('start', help='Starts %(prog)s daemon')
+    sp_start.set_defaults(func=start_daemon)
+
+    sp_stop = sp.add_parser('stop', help='Stops %(prog)s daemon')
+    sp_stop.set_defaults(func=stop_daemon)
+
+    sp_restart = sp.add_parser('restart', help='Restarts %(prog)s daemon')
+    sp_restart.set_defaults(func=restart_daemon)
+
+    parser.add_argument('-d', '--debug', action='store_true',
+            help='do not run the program as a daemon')
+    
+    # client-side non reminders
+    sp_show = sp.add_parser('show', help='Shows all open reminders')
+    sp_show.set_defaults(func=show_reminders)
+
+    sp_clear = sp.add_parser('clear', help='Clear all or specified open reminders')
+    sp_clear.add_argument('-n', '--index', type=int, help='clear the reminder at ' +
+            'the specified index')
+    sp_clear.set_defaults(func=clear_reminders)
+
+    # client-side reminders
+    sp_file = sp.add_parser('file', help='set a reminder for a file')
+    file_group = sp_file.add_mutually_exclusive_group()
+    file_group.add_argument('-gt', '--sizegt', type=int, metavar='bytes')
+    file_group.add_argument('-lt', '--sizelt', type=int, metavar='bytes')
+    sp_file.add_argument('file', nargs='+')
+    sp_file.set_defaults(func=file_reminder)
+
+    sp_process = sp.add_parser('process', help='set a reminder for a process')
+    process_group = sp_process.add_mutually_exclusive_group()
+    process_group.add_argument('-s', '--stopped', action='store_true')
+    process_group.add_argument('-n', '--newer', type=int, metavar='timestr')
+    process_group.add_argument('-o', '--older', type=int, metavar='timestr')
+    sp_process.set_defaults(func=process_reminder)
+
+    sp_time = sp.add_parser('time', help='set a time-based reminder')
+    time_group = sp_time.add_mutually_exclusive_group()
+    time_group.add_argument('-e', '--elapsed', type=int, metavar='secs')
+    time_group.add_argument('-a', '--after', type=int, metavar='secs')
+    sp_time.set_defaults(func=time_reminder)
+
+    args = parser.parse_args()
+    args.func(args)
 

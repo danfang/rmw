@@ -2,13 +2,6 @@ import logging
 import os
 from subprocess import call
 
-logger = logging.getLogger('rmw_service')
-handler = logging.FileHandler('/var/log/rmw/rmw_service.log')
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
-
 class Reminder(object):
     '''
     Types of reminders:
@@ -42,39 +35,50 @@ class Reminder(object):
     '''
 
     def __str__(self):
-        return '{} for {}, with {}'.format(
-                type(self).__name__, self.target, str(self.flags))
+        total = '{} for {}'.format(type(self).__name__, self.target)
+        
+        if self.flags != None:
+            total += ' with ' + str(self.flags)
 
-    def valid_flags(self, flags):
-        return False
+        return total
 
     def handle(self):
         return False
+
+    def success(self, target, quality, value):
+        call("echo \'Reminder {} {} {}\' | wall ".format(
+            self.target, quality, value), shell=True) 
+
+        return True
 
 class FileReminder(Reminder):
 
-    def __init__(self, flags, target):
-        self.flags = []
-        for flag in flags:
-            self.flags.append(flag)
+    def __init__(self, logger, flags, target):
+        self.logger = logger
         self.target = target
-
-    def valid_flags(self, flags):
-        pass
+        self.flags = flags
 
     def handle(self):
-        for flag in self.flags:
-            option, value = flag
+        if self.flags != None:
+            option, value = self.flags
 
-            if option == '-gt':
+            if option == 'sizegt' or option == 'sizelt':
                 try:
                     size = os.path.getsize(self.target)
 
-                    if size > int(value):
-                        call("echo \'rmw: {} size greater than {}\' | wall ".format(self.target, value), shell=True) 
-                        return True
+                    if size > int(value) and option == 'sizegt':
+                        return self.success(self.target, 'is greater than', value)
+
+                    elif size < int(value) and option == 'sizelt':
+                        return self.success(self.target, 'is less than', value)
+
                 except Exception, e:
                     logger.error(e)
+
+        elif os.path.isfile(self.target):
+
+            return self.success(self.target, 'has been created', None)
+
         return False
 
 class ProcessReminder(Reminder):
