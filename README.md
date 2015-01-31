@@ -16,7 +16,7 @@ rpyc
 ## Usage
 
 ```
-rmw file foo.txt bar.txt other.txt (Remind me when log.txt is greater than 3KB)
+rmw file foo.txt bar.txt other.txt 
 
 Created FileReminder for foo.txt
 Created FileReminder for bar.txt
