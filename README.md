@@ -1,17 +1,23 @@
-rmw (Remind Me When)
+rmw
 ==
 
-A service that uses RPC commands to set reminders for certain events.
+rmw is short for "remind me when".
+
+It's a small service that uses RPC commands to set reminders for certain events.
 
 ## Status
 
-NOT READY FOR PRODUCTION
+in-progress
 
 ## Dependencies
 
 pip
 
 rpyc
+
+## Installation
+
+in-progress
 
 ## Usage
 
@@ -68,8 +74,8 @@ add 'sticky' reminders
 
 ### Features
 
-rmw process -o someprocess (Remind me when someprocess is open)
-
 rmw time -a 201501011159 (Remind me when the time is past 1/1/15 11:59)
 
 rmw time -e 1000 (Remind me when 1000 seconds have elapsed)
+
+rmw custom -e 500 -m "Don't forget to commit your changes!" (Remind me after 500 seconds to commit changes)
