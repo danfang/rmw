@@ -6,11 +6,10 @@ import argparse
 from rmw_server import RMWDaemon
 from rmw_cli import RMWClient
 
-if __name__ == "__main__":
+def main():
     ''' 
     The control module for both rmw's server and client 
     '''
-
     def start_daemon(args):
         if args.port != None:
             print 'Running on port ' + str(args.port)
@@ -124,3 +123,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.func(args)
 
+
+if __name__ == "__main__":
+    main()
