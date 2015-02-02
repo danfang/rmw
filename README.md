@@ -5,19 +5,23 @@ rmw is short for "remind me when".
 
 It's a small service that uses RPC commands to set reminders for certain events.
 
-## Status
+## Version
 
-In-progress
-
-## Dependencies
-
-pip
-
-rpyc
+0.0.dev1
 
 ## Installation
 
-In-progress
+Method 1.
+
+sudo mkdir /log/var/rmw/ (where log files will be stored)
+
+pip install rmw
+
+Method 2.
+
+git clone https://github.com/danfang/rmw.git
+
+sudo sh install
 
 ## Usage
 
@@ -68,7 +72,7 @@ All reminders cleared
 
 #### General
 
-allow pip build and install
+use a config file or have an alternative way to specify and create log folders without hassle
 
 find another way to do notifications besides 'wall'
 
