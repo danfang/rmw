@@ -13,15 +13,17 @@ It's a small service that uses RPC commands to set reminders for certain events.
 
 Method 1.
 
+```
 sudo mkdir /log/var/rmw/ (where log files will be stored)
-
 pip install rmw
+```
 
 Method 2.
 
+```
 git clone https://github.com/danfang/rmw.git
-
 sudo sh install
+```
 
 ## Usage
 
